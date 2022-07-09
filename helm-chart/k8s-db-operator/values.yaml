@@ -1,0 +1,6 @@
+databases:
+  storageCapacity: 20G
+
+  postgres:
+    memoryLimit: 1Gi
+    cpuLimit: 500m

@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  annotations:
+    "helm.sh/resource-policy": "keep"
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.databases.storageCapacity | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  {{- $secret := (lookup "v1" "Secret" .Release.Namespace "postgres-secret") | default dict }}
+  {{- $secretData := (get $secret "data") | default dict }}
+  {{- $password := (get $secretData "password") | default (randAlphaNum 32 | b64enc) }}
+  password: {{ $password | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: {{ .Values.databases.postgres.memoryLimit | quote }}
+            cpu: {{ .Values.databases.postgres.cpuLimit | quote }}
+        volumeMounts:
+        - mountPath: "/var/lib/postgresql/data"
+          subPath: "postgres"
+          name: pgdata
+      volumes:
+      - name: pgdata
+        persistentVolumeClaim:
+          claimName: postgres-pvc

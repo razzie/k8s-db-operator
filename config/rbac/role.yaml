@@ -1,0 +1,39 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - k8s-db-operator.razzie.github.io
+  resources:
+  - databaseclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - k8s-db-operator.razzie.github.io
+  resources:
+  - databaseclaims/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - k8s-db-operator.razzie.github.io
+  resources:
+  - databaseclaims/status
+  verbs:
+  - get
+  - patch
+  - update

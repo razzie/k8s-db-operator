@@ -1,0 +1,6 @@
+apiVersion: k8s-db-operator.razzie.github.io/v1alpha1
+kind: DatabaseClaim
+metadata:
+  name: databaseclaim-sample
+spec:
+  # TODO(user): Add fields here
