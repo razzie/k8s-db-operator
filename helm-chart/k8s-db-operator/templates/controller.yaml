@@ -52,6 +52,9 @@ rules:
   - secrets
   verbs:
   - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - k8s-db-operator.razzie.github.io
   resources:

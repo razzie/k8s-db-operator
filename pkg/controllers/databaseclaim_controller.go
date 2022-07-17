@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	k8sdboperatorv1alpha1 "github.com/razzie/k8s-db-operator/pkg/api/v1alpha1"
@@ -41,7 +42,7 @@ type DatabaseClaimReconciler struct {
 //+kubebuilder:rbac:groups=k8s-db-operator.razzie.github.io,resources=databaseclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=k8s-db-operator.razzie.github.io,resources=databaseclaims/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=k8s-db-operator.razzie.github.io,resources=databaseclaims/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=secrets,verbs=create;
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -81,6 +82,7 @@ func (r *DatabaseClaimReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		secret.Data = map[string][]byte{
 			"connectionString": []byte(connStr),
 		}
+		controllerutil.SetOwnerReference(dbclaim, secret, r.Scheme)
 		err = r.Client.Create(ctx, secret)
 		if err != nil {
 			log.Error(err, "failed to create secret")
