@@ -227,7 +227,8 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: razzquez/k8s-db-operator:0.0.1
+        image: razzquez/k8s-db-operator:latest
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

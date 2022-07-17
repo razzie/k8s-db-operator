@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/sethvargo/go-password/password"
@@ -20,7 +21,7 @@ func randomHex(n int) (string, error) {
 }
 
 func CreateNewConnectionString(ctx context.Context) (string, error) {
-	id, err := randomHex(6)
+	id, err := randomHex(2)
 	if err != nil {
 		return "", err
 	}
@@ -29,35 +30,37 @@ func CreateNewConnectionString(ctx context.Context) (string, error) {
 	masterAddress := os.Getenv("POSTGRES_ADDR")
 	masterUser := os.Getenv("POSTGRES_USER")
 	masterPassword := os.Getenv("POSTGRES_PASSWORD")
+	masterPasswordUrlEncoded := url.QueryEscape(masterPassword)
 	masterDb := os.Getenv("POSTGRES_DB")
-	masterConnStr := fmt.Sprintf("postgres://%s:%s@%s/%s", masterUser, masterPassword, masterAddress, masterDb)
+	masterConnStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", masterUser, masterPasswordUrlEncoded, masterAddress, masterDb)
 	db, err := sql.Open("postgres", masterConnStr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to connect to rds: %v", err)
 	}
 	defer db.Close()
 
 	// create new db
-	newDb := "db-" + id
-	_, err = db.ExecContext(ctx, "CREATE DATABASE %s;", newDb)
+	newDb := "db_" + id
+	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", newDb))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create new database: %v", err)
 	}
 
 	// create new user
-	newUser := "user-" + id
+	newUser := "user_" + id
 	newPassword, err := password.Generate(32, 6, 6, false, true)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate password: %v", err)
 	}
-	_, err = db.ExecContext(ctx, "CREATE USER $1 WITH PASSWORD '$2';", newUser, newPassword)
+	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE USER %s WITH PASSWORD '%s'", newUser, newPassword))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create new user: %v", err)
 	}
-	_, err = db.ExecContext(ctx, "GRANT ALL PRIVILEGES ON DATABASE $1 TO $2;", newDb, newUser)
+	_, err = db.ExecContext(ctx, fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s", newDb, newUser))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to set up new user privileges: %v", err)
 	}
 
-	return fmt.Sprintf("postgres://%s:%s@%s/%s", newUser, newPassword, masterAddress, newDb), nil
+	newPasswordUrlEncoded := url.QueryEscape(newPassword)
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", newUser, newPasswordUrlEncoded, masterAddress, newDb), nil
 }

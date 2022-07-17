@@ -9,7 +9,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.databases.storageCapacity | quote }}
+      storage: {{ .Values.databases.postgres.storageCapacity | quote }}
 ---
 apiVersion: v1
 kind: Secret
