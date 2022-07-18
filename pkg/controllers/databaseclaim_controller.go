@@ -22,7 +22,6 @@ import (
 
 	_ "github.com/lib/pq"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,13 +58,8 @@ func (r *DatabaseClaimReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// TODO(user): your logic here
 	dbclaim := &k8sdboperatorv1alpha1.DatabaseClaim{}
 	if err := r.Get(ctx, req.NamespacedName, dbclaim); err != nil {
-		if apierrors.IsNotFound(err) {
-			// don't requeue on deletions, which yield a non-found object
-			return ctrl.Result{}, nil
-		}
-
 		log.Error(err, "unable to fetch object")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !dbclaim.Status.Ready {
@@ -88,10 +82,12 @@ func (r *DatabaseClaimReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "failed to create secret")
 			return ctrl.Result{}, err
 		}
+		log.Info("created secret", "secret", secret)
 
 		// update cr state to ready
 		dbclaim.Status.Ready = true
-		r.Client.Update(ctx, dbclaim)
+		r.Client.Status().Update(ctx, dbclaim)
+		log.Info("updated ready status to true", "dbclaim", req.NamespacedName)
 	}
 
 	return ctrl.Result{}, nil

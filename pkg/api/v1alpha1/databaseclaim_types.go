@@ -48,12 +48,13 @@ type DatabaseClaimStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	//+optional
 	Ready bool `json:"ready"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:shortName=dbclaim
+//+kubebuilder:resource:shortName={dbclaim,dbclaims}
 //+kubebuilder:printcolumn:name="Database",type="string",JSONPath=".spec.databaseType"
 //+kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.secretName"
 //+kubebuilder:printcolumn:name="Ready",type="boolean",JSONPath=".status.ready"
@@ -68,6 +69,7 @@ type DatabaseClaim struct {
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // DatabaseClaimList contains a list of DatabaseClaim
 type DatabaseClaimList struct {
