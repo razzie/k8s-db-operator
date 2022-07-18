@@ -254,6 +254,13 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: password
+        - name: REDIS_ADDR
+          value: redis.{{ .Release.Namespace }}.svc.cluster.local:6666
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
         resources:
           limits:
             cpu: 500m

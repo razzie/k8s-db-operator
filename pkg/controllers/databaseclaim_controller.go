@@ -30,6 +30,7 @@ import (
 
 	k8sdboperatorv1alpha1 "github.com/razzie/k8s-db-operator/pkg/api/v1alpha1"
 	"github.com/razzie/k8s-db-operator/pkg/postgres"
+	"github.com/razzie/k8s-db-operator/pkg/redis"
 )
 
 // DatabaseClaimReconciler reconciles a DatabaseClaim object
@@ -105,6 +106,8 @@ func createNewConnectionString(ctx context.Context, dbType k8sdboperatorv1alpha1
 	switch dbType {
 	case "PostgreSQL":
 		return postgres.CreateNewConnectionString(ctx)
+	case "Redis":
+		return redis.CreateNewConnectionString(ctx)
 	default:
 		return "", fmt.Errorf("unknown database type: %s", dbType)
 	}

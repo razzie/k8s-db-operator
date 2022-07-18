@@ -35,7 +35,7 @@ func CreateNewConnectionString(ctx context.Context) (string, error) {
 	masterConnStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", masterUser, masterPasswordUrlEncoded, masterAddress, masterDb)
 	db, err := sql.Open("postgres", masterConnStr)
 	if err != nil {
-		return "", fmt.Errorf("failed to connect to rds: %v", err)
+		return "", fmt.Errorf("failed to connect to postgres: %v", err)
 	}
 	defer db.Close()
 
