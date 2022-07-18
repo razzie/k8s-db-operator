@@ -1,5 +1,9 @@
 databases:
   postgres:
-    storageCapacity: 20G
+    storageCapacity: 8G
+    memoryLimit: 1Gi
+    cpuLimit: 500m
+  redis:
+    storageCapacity: 2G
     memoryLimit: 1Gi
     cpuLimit: 500m

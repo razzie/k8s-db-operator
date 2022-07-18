@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  annotations:
+    "helm.sh/resource-policy": "keep"
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.databases.redis.storageCapacity | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  kvrocks.conf.template: |
+    bind 0.0.0.0
+    port 6666
+    timeout 0
+    workers 2
+    maxclients 1000
+    dir /kvrocks/data
+    max-io-mb 500
+    max-db-size 0
+    max-backup-to-keep 1
+    max-backup-keep-hours 24
+    rocksdb.metadata_block_cache_size 256
+    rocksdb.subkey_block_cache_size 256
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  {{- $secret := (lookup "v1" "Secret" .Release.Namespace "redis-secret") | default dict }}
+  {{- $secretData := (get $secret "data") | default dict }}
+  {{- $password := (get $secretData "password") | default (randAlphaNum 32 | b64enc) }}
+  password: {{ $password | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6666
+  selector:
+    app: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      initContainers:
+      - name: kvrocks-config-init
+        image: bash
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        volumeMounts:
+        - mountPath: "/kvrocks/conf_template"
+          name: conf-template-vol
+        - mountPath: "/kvrocks/conf"
+          name: conf-vol
+        workingDir: /kvrocks
+        command:
+        - bash
+        args:
+        - -c
+        - "cp ./conf_template/kvrocks.conf.template ./conf/kvrocks.conf && echo \"requirepass $REDIS_PASSWORD\" >> ./conf/kvrocks.conf"
+      containers:
+      - name: kvrocks
+        image: kvrocks/kvrocks
+        ports:
+        - containerPort: 6666
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: {{ .Values.databases.redis.memoryLimit | quote }}
+            cpu: {{ .Values.databases.redis.cpuLimit | quote }}
+        volumeMounts:
+        - mountPath: "/kvrocks/data"
+          subPath: "kvrocks"
+          name: data-vol
+        - mountPath: "/kvrocks/conf"
+          name: conf-vol
+      volumes:
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: redis-pvc
+      - name: conf-template-vol
+        configMap:
+          name: redis-config
+      - name: conf-vol
+        emptyDir: {}
