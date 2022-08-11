@@ -1,3 +1,5 @@
+installCRD: true
+
 databases:
   postgres:
     storageCapacity: 8G

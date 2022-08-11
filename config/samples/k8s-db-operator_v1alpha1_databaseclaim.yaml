@@ -3,4 +3,5 @@ kind: DatabaseClaim
 metadata:
   name: databaseclaim-sample
 spec:
-  # TODO(user): Add fields here
+  databaseType: PostgreSQL
+  secretName: postgres-secret

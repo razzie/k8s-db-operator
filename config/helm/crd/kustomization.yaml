@@ -1,0 +1,4 @@
+namespace: "{{ .Release.Namespace }}"
+namePrefix: "k8s-db-operator-"
+bases:
+- ../../crd
