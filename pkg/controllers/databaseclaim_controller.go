@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	_ "github.com/lib/pq"
@@ -31,6 +32,10 @@ import (
 	k8sdboperatorv1alpha1 "github.com/razzie/k8s-db-operator/pkg/api/v1alpha1"
 	"github.com/razzie/k8s-db-operator/pkg/postgres"
 	"github.com/razzie/k8s-db-operator/pkg/redis"
+)
+
+var (
+	ErrUnknownDatabaseType = fmt.Errorf("unknown database type")
 )
 
 // DatabaseClaimReconciler reconciles a DatabaseClaim object
@@ -66,6 +71,10 @@ func (r *DatabaseClaimReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if !dbclaim.Status.Ready {
 		connStr, err := createNewConnectionString(ctx, dbclaim.Spec.DatabaseType)
 		if err != nil {
+			if errors.Is(err, ErrUnknownDatabaseType) {
+				log.Error(err, "", "spec.databaseType", string(dbclaim.Spec.DatabaseType))
+				return ctrl.Result{}, err
+			}
 			log.Error(err, "failed to create new connection string")
 			return ctrl.Result{Requeue: true}, err
 		}
@@ -109,6 +118,6 @@ func createNewConnectionString(ctx context.Context, dbType k8sdboperatorv1alpha1
 	case "Redis":
 		return redis.CreateNewConnectionString(ctx)
 	default:
-		return "", fmt.Errorf("unknown database type: %s", dbType)
+		return "", ErrUnknownDatabaseType
 	}
 }
