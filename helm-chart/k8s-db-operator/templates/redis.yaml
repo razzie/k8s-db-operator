@@ -70,7 +70,7 @@ spec:
     spec:
       initContainers:
       - name: kvrocks-config-init
-        image: bash
+        image: {{ .Values.databases.redis.bashImage | default "bash" }}
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -90,7 +90,7 @@ spec:
         - "cp ./conf_template/kvrocks.conf.template ./conf/kvrocks.conf && echo \"requirepass $REDIS_PASSWORD\" >> ./conf/kvrocks.conf"
       containers:
       - name: kvrocks
-        image: kvrocks/kvrocks
+        image: {{ .Values.databases.redis.image | default "kvrocks/kvrocks" }}
         ports:
         - containerPort: 6666
         resources:

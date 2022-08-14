@@ -211,7 +211,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: razzquez/k8s-db-operator:0.0.1
+        image: ghcr.io/razzie/k8s-db-operator:{{ .Values.version | default "latest" }}
         livenessProbe:
           httpGet:
             path: /healthz

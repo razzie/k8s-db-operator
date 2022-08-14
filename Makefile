@@ -1,5 +1,5 @@
-VERSION ?= 0.0.1
-IMAGE_TAG_BASE ?= razzquez/k8s-db-operator
+VERSION ?= `git describe --tags`
+IMAGE_TAG_BASE ?= ghcr.io/razzie/k8s-db-operator
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
 ifeq (,$(shell go env GOBIN))
@@ -67,7 +67,7 @@ helm-chart: manifests kustomize
 
 .PHONY: deploy
 deploy:
-	helm update --install k8s-db-operator helm-chart/k8s-db-operator/
+	helm update --install k8s-db-operator helm-chart/k8s-db-operator/ --set version=$(VERSION)
 
 .PHONY: undeploy
 undeploy:

@@ -2,10 +2,14 @@ installCRD: true
 
 databases:
   postgres:
+    image: postgres:14-alpine
     storageCapacity: 8G
     memoryLimit: 1Gi
     cpuLimit: 500m
+
   redis:
+    image: kvrocks/kvrocks:v2.0.6
+    bashImage: bash
     storageCapacity: 2G
     memoryLimit: 1Gi
     cpuLimit: 500m
