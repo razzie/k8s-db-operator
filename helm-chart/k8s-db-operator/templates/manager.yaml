@@ -211,6 +211,25 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: POSTGRES_ADDR
+          value: postgres.{{ .Release.Namespace }}.svc.cluster.local
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: postgres-secret
+        - name: REDIS_ADDR
+          value: redis.{{ .Release.Namespace }}.svc.cluster.local:6666
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redis-secret
         image: ghcr.io/razzie/k8s-db-operator:{{ .Values.version | default "latest" }}
         livenessProbe:
           httpGet:

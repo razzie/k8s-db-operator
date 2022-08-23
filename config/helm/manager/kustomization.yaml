@@ -3,3 +3,5 @@ namePrefix: "k8s-db-operator-"
 bases:
 - ../../rbac
 - ../../manager
+patchesStrategicMerge:
+- patches/envvars_in_manager.yaml
