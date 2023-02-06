@@ -1,4 +1,4 @@
 apiVersion: v2
 name: k8s-db-operator
 description: k8s-db-operator helm chart
-version: 0.0.4
+version: 0.0.5

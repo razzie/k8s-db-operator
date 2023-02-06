@@ -73,6 +73,16 @@ spec:
       initContainers:
       - name: kvrocks-config-init
         image: {{ .Values.databases.redis.bashImage | default "bash" }}
+        workingDir: /kvrocks
+        command:
+        - bash
+        args:
+        - -c
+        - >-
+          if [ ! -f "./conf/kvrocks.conf" ]; then
+            cp ./conf_template/kvrocks.conf.template ./conf/kvrocks.conf &&
+            echo "requirepass $REDIS_PASSWORD" >> ./conf/kvrocks.conf
+          fi
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -83,13 +93,8 @@ spec:
         - mountPath: "/kvrocks/conf_template"
           name: conf-template-vol
         - mountPath: "/kvrocks/conf"
-          name: conf-vol
-        workingDir: /kvrocks
-        command:
-        - bash
-        args:
-        - -c
-        - "cp ./conf_template/kvrocks.conf.template ./conf/kvrocks.conf && echo \"requirepass $REDIS_PASSWORD\" >> ./conf/kvrocks.conf"
+          subPath: "conf"
+          name: data-vol
       containers:
       - name: kvrocks
         image: {{ .Values.databases.redis.image | default "kvrocks/kvrocks" }}
@@ -104,10 +109,11 @@ spec:
             cpu: {{ .Values.databases.redis.cpuLimit | quote }}
         volumeMounts:
         - mountPath: "/kvrocks/data"
-          subPath: "kvrocks"
+          subPath: "data"
           name: data-vol
         - mountPath: "/kvrocks/conf"
-          name: conf-vol
+          subPath: "conf"
+          name: data-vol
       volumes:
       - name: data-vol
         persistentVolumeClaim:
@@ -115,5 +121,3 @@ spec:
       - name: conf-template-vol
         configMap:
           name: redis-config
-      - name: conf-vol
-        emptyDir: {}
